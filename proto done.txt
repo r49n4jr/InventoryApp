@@ -1,0 +1,284 @@
+import tkinter as tk
+from tkinter import messagebox, ttk
+import pandas as pd
+import datetime
+from escpos.printer import Serial
+
+# Configurable COM port
+PRINTER_PORT = 'COM6'
+
+class AutocompleteEntry(tk.Entry):
+    def __init__(self, suggestions_callback, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.suggestions_callback = suggestions_callback
+        self.dropdown = None
+        self.listbox = None
+        self.matches = []
+        self.selected_index = 0
+
+        self.bind("<KeyRelease>", self.update_suggestions)
+        self.bind("<Down>", self.move_down)
+        self.bind("<Up>", self.move_up)
+        self.bind("<Return>", self.select_item)
+
+    def update_suggestions(self, event=None):
+        if event and event.keysym in ["Up", "Down", "Return"]:
+            return
+
+        typed = self.get().lower()
+        if typed == "":
+            self.hide_dropdown()
+            return
+
+        self.matches = self.suggestions_callback(typed)
+        if not self.matches:
+            self.hide_dropdown()
+            return
+
+        if not self.dropdown:
+            self.dropdown = tk.Toplevel(self)
+            self.dropdown.wm_overrideredirect(True)
+            self.dropdown.attributes("-topmost", True)
+
+            self.listbox = tk.Listbox(self.dropdown, height=8)
+            self.listbox.pack(side="left", fill="both", expand=True)
+
+            scrollbar = tk.Scrollbar(self.dropdown, orient="vertical", command=self.listbox.yview)
+            scrollbar.pack(side="right", fill="y")
+            self.listbox.config(yscrollcommand=scrollbar.set)
+
+        self.listbox.delete(0, tk.END)
+        for match in self.matches:
+            self.listbox.insert(tk.END, match)
+
+        self.selected_index = 0
+        self.update_selection()
+
+        x = self.winfo_rootx()
+        y = self.winfo_rooty() + self.winfo_height()
+        self.dropdown.geometry(f"{self.winfo_width()}x160+{x}+{y}")
+        self.dropdown.deiconify()
+
+    def update_selection(self):
+        self.listbox.select_clear(0, tk.END)
+        self.listbox.select_set(self.selected_index)
+        self.listbox.activate(self.selected_index)
+
+    def move_down(self, event):
+        if self.listbox and self.selected_index < len(self.matches) - 1:
+            self.selected_index += 1
+            self.update_selection()
+        return "break"
+
+    def move_up(self, event):
+        if self.listbox and self.selected_index > 0:
+            self.selected_index -= 1
+            self.update_selection()
+        return "break"
+
+    def select_item(self, event=None):
+        if self.listbox and self.matches:
+            selected = self.matches[self.selected_index]
+            self.delete(0, tk.END)
+            self.insert(0, selected)
+            self.hide_dropdown()
+            search_items()
+            qty_entry.focus()
+            qty_entry.select_range(0, tk.END)
+            return "break"
+
+    def hide_dropdown(self):
+        if self.dropdown:
+            self.dropdown.withdraw()
+
+root = tk.Tk()
+root.title("Barang Gudang")
+root.geometry("600x580")
+
+columns = ("Item", "Stock", "Qty", "Unit")
+df_inventory = pd.DataFrame()
+
+# Treeview with scrollbar
+tree_frame = tk.Frame(root)
+tree_frame.pack(expand=True, fill="both", padx=10, pady=10)
+
+tree_scroll = tk.Scrollbar(tree_frame)
+tree_scroll.pack(side="right", fill="y")
+
+tree = ttk.Treeview(tree_frame, columns=columns, show="headings", yscrollcommand=tree_scroll.set)
+tree_scroll.config(command=tree.yview)
+tree.pack(side="left", expand=True, fill="both")
+
+for col in columns:
+    tree.heading(col, text=col)
+    tree.column(col, width=120)
+
+search_frame = tk.Frame(root)
+search_frame.pack(pady=5)
+
+tk.Label(search_frame, text="Qty:").pack(side="left", padx=5)
+qty_var = tk.StringVar(value="1")
+qty_entry = tk.Entry(search_frame, textvariable=qty_var, width=5)
+qty_entry.pack(side="left")
+qty_entry.focus()
+qty_entry.select_range(0, tk.END)
+
+tk.Label(search_frame, text="Search:").pack(side="left", padx=5)
+
+def get_suggestions(keyword):
+    keyword = keyword.lower()
+    matches = df_inventory[df_inventory.apply(
+        lambda row: keyword in " ".join(str(v).lower() for v in row), axis=1)]
+    return list(matches["Item"]) if not matches.empty else []
+
+search_var = tk.StringVar()
+search_entry = AutocompleteEntry(get_suggestions, search_frame, textvariable=search_var)
+search_entry.pack(side="left", fill="x", expand=True)
+
+def auto_import_csv():
+    global df_inventory
+    try:
+        df_inventory = pd.read_csv("data/barang.csv")
+    except Exception as e:
+        messagebox.showerror("Error", f"Import failed:\n{e}")
+
+def search_items(event=None):
+    keyword = search_var.get().lower()
+    matches = df_inventory[df_inventory.apply(
+        lambda row: keyword in " ".join(str(v).lower() for v in row), axis=1)]
+
+    if matches.empty:
+        return
+
+    row = matches.iloc[0]
+    item_name = row["Item"]
+    stock = row["Stock"]
+    unit = row["Unit"]
+
+    try:
+        qty = int(qty_var.get())
+        if qty < 0:
+            raise ValueError
+    except ValueError:
+        qty_var.set("1")
+        qty_entry.focus()
+        return
+
+    for item_id in tree.get_children():
+        values = tree.item(item_id)["values"]
+        if values[0] == item_name:
+            new_values = list(values)
+            new_values[3] = int(new_values[3]) + qty
+            tree.item(item_id, values=new_values)
+            search_var.set("")
+            qty_var.set("1")
+            qty_entry.focus()
+            return
+
+    tree.insert("", "end", values=(item_name, stock, qty, unit))
+    search_var.set("")
+    qty_var.set("1")
+    qty_entry.focus()
+
+def edit_quantity():
+    selected_items = tree.selection()
+    if not selected_items:
+        return
+
+    selected = selected_items[0]
+    item_data = tree.item(selected)["values"]
+    current_qty = item_data[3]
+
+    qty_window = tk.Toplevel(root)
+    qty_window.title("Edit Quantity")
+    qty_window.geometry("250x100")
+    qty_window.grab_set()
+
+    tk.Label(qty_window, text="Enter Quantity:").pack(pady=5)
+    qty_entry_popup = tk.Entry(qty_window)
+    qty_entry_popup.insert(0, str(current_qty))
+    qty_entry_popup.select_range(0, tk.END) 
+    qty_entry_popup.pack()
+    qty_entry_popup.focus()
+
+    def save_qty(event=None):
+        try:
+            new_qty = int(qty_entry_popup.get())
+            if new_qty <= 0:
+                tree.delete(selected)
+            else:
+                item_data[3] = new_qty
+                tree.item(selected, values=item_data)
+            qty_window.destroy()
+            qty_entry.focus()
+        except ValueError:
+            pass
+
+    qty_entry_popup.bind("<Return>", save_qty)
+
+def remove_all():
+    for item_id in tree.get_children():
+        tree.delete(item_id)
+    qty_entry.focus()
+
+def print_receipt():
+    all_items = tree.get_children()
+    if not all_items:
+        return
+
+    timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
+    total_qty = 0
+    lines = []
+
+    for item_id in all_items:
+        item_data = tree.item(item_id)["values"]
+        item_name, stock, qty, unit = item_data
+        total_qty += int(qty)
+        lines.append(f"{qty} {unit} {item_name}")
+
+    try:
+        printer = Serial(devfile=PRINTER_PORT, baudrate=9600, timeout=1)
+        printer._raw(b'\x1B\x33\x10')  # Reduce line spacing
+
+        printer.set(align='center')
+        printer.text("Barang Gudang\n")
+        printer.text(f"{timestamp}\n\n")
+
+        printer.set(align='left')
+        for line in lines:
+            printer.text(f"{line}\n")
+
+        printer.text("\n")
+        printer.text(f"Total Qty: {total_qty}\n")
+        printer.cut(mode='FULL')
+
+        for item_id in all_items:
+            item_data = tree.item(item_id)["values"]
+            item_name, stock, qty, unit = item_data
+            new_stock = int(stock) - int(qty)
+            item_data[1] = new_stock
+            item_data[2] = 1
+            tree.item(item_id, values=item_data)
+            df_inventory.loc[df_inventory["Item"] == item_name, "Stock"] = new_stock
+
+        df_inventory.to_csv("data/barang.csv", index=False)
+        remove_all()
+        qty_entry.focus()
+
+    except Exception as e:
+        messagebox.showerror("Print Error", f"Could not print:\n{e}")
+
+button_frame = tk.Frame(root)
+button_frame.pack(pady=10)
+
+tk.Button(button_frame, text="Qty (F4)", command=edit_quantity).pack(side="left", padx=10)
+tk.Button(button_frame, text="Print (F12)", command=print_receipt).pack(side="left", padx=10)
+tk.Button(button_frame, text="Remove All (Del)", command=remove_all).pack(side="left", padx=10)
+
+
+root.bind("<F4>", lambda e: edit_quantity())
+root.bind("<F12>", lambda e: print_receipt())
+root.bind("<Delete>", lambda e: remove_all())
+
+auto_import_csv()
+root.mainloop()
