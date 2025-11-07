@@ -4,6 +4,7 @@ from models.inventory_manager import InventoryManager
 from utils.receipt_printer import ReceiptPrinter
 from ui.autocomplete_entry import AutocompleteEntry
 from config.manager import ConfigManager
+from ui.settings_dialog import SettingsDialog
 
 class POSApp:
     def __init__(self, root):
@@ -27,6 +28,13 @@ class POSApp:
             title = f"{title} - {self.config.company_name}"
         self.root.title(title)
         self.root.geometry("600x580")
+
+        # Menu bar with Settings
+        menubar = tk.Menu(self.root)
+        self.root.config(menu=menubar)
+        app_menu = tk.Menu(menubar, tearoff=0)
+        app_menu.add_command(label="Settings", command=self.open_settings)
+        menubar.add_cascade(label="App", menu=app_menu)
 
         self.setup_treeview()
         self.setup_search_bar()
@@ -80,6 +88,26 @@ class POSApp:
         self.root.bind("<F4>", lambda e: self.edit_quantity())
         self.root.bind("<F12>", lambda e: self.print_receipt())
         self.root.bind("<Delete>", lambda e: self.remove_all())
+
+    def open_settings(self):
+        SettingsDialog(self.root, self.config, on_saved=self.apply_config)
+
+    def apply_config(self):
+        # Reload config from disk and apply to app
+        self.config.load()
+        # Update title
+        title = self.config.app_name or "Inventory App"
+        if self.config.company_name:
+            title = f"{title} - {self.config.company_name}"
+        self.root.title(title)
+        # Recreate manager with potentially new CSV path
+        self.manager = InventoryManager(self.config.csv_path)
+        # Recreate printer with new settings
+        self.printer = ReceiptPrinter(
+            self.config.printer_port,
+            baudrate=self.config.printer_baudrate,
+            timeout=self.config.printer_timeout,
+        )
 
     def search_items(self, keyword=None):
         row = self.manager.get_item(keyword)

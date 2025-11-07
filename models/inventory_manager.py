@@ -9,7 +9,16 @@ class InventoryManager:
 
     def load(self):
         try:
-            self.df = pd.read_csv(self.path)
+            # Ensure file exists with required headers
+            try:
+                self.df = pd.read_csv(self.path)
+            except FileNotFoundError:
+                self.df = pd.DataFrame({"Item": [], "Stock": [], "Unit": []})
+                self.save()
+            except Exception:
+                # If file exists but unreadable, show error and init empty structure
+                messagebox.showerror("Error", f"Failed to read inventory at {self.path}. Initializing empty list.")
+                self.df = pd.DataFrame({"Item": [], "Stock": [], "Unit": []})
         except Exception as e:
             messagebox.showerror("Error", f"Import failed:\n{e}")
 
