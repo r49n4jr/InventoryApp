@@ -185,6 +185,9 @@ class POSApp:
         qty_entry_popup.bind("<Return>", save_qty)
 
     def remove_all(self):
+        # Confirm clearing all items
+        if not self.confirm("Confirm", "Clear all items from the cart?"):
+            return
         for item_id in self.tree.get_children():
             self.tree.delete(item_id)
         self.qty_entry.focus()
@@ -193,6 +196,9 @@ class POSApp:
     def print_receipt(self):
         all_items = self.tree.get_children()
         if not all_items:
+            return
+        # Confirm printing
+        if not self.confirm("Print", "Print the receipt and update stock?"):
             return
         items = []
         for item_id in all_items:
@@ -205,3 +211,36 @@ class POSApp:
             self.manager.update_stock(item_name, new_stock)
         self.manager.save()
         self.remove_all()
+
+    def confirm(self, title: str, message: str) -> bool:
+        # Custom modal confirm dialog: Enter=Yes, Esc=Cancel
+        win = tk.Toplevel(self.root)
+        win.title(title)
+        win.resizable(False, False)
+        win.transient(self.root)
+        win.grab_set()
+        frame = tk.Frame(win, padx=16, pady=12)
+        frame.pack(fill="both", expand=True)
+        tk.Label(frame, text=message, anchor="w", justify="left").pack(pady=(0, 8))
+        btns = tk.Frame(frame)
+        btns.pack(anchor="e")
+        result = {"val": False}
+
+        def do_yes(event=None):
+            result["val"] = True
+            win.destroy()
+
+        def do_no(event=None):
+            result["val"] = False
+            win.destroy()
+
+        yes_btn = tk.Button(btns, text="Yes", width=8, command=do_yes)
+        no_btn = tk.Button(btns, text="Cancel", width=8, command=do_no)
+        no_btn.pack(side="right")
+        yes_btn.pack(side="right", padx=(0, 8))
+
+        win.bind("<Return>", do_yes)
+        win.bind("<Escape>", do_no)
+        yes_btn.focus_set()
+        self.root.wait_window(win)
+        return result["val"]
