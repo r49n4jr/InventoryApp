@@ -82,12 +82,22 @@ class POSApp:
 
         tk.Button(button_frame, text="Qty (F4)", command=self.edit_quantity).pack(side="left", padx=10)
         tk.Button(button_frame, text="Print (F12)", command=self.print_receipt).pack(side="left", padx=10)
-        tk.Button(button_frame, text="Remove All (Del)", command=self.remove_all).pack(side="left", padx=10)
+        tk.Button(button_frame, text="Remove (Del)", command=self.remove_selected).pack(side="left", padx=10)
+        tk.Button(button_frame, text="Cancel", command=self.remove_all).pack(side="left", padx=10)
 
     def setup_shortcuts(self):
         self.root.bind("<F4>", lambda e: self.edit_quantity())
         self.root.bind("<F12>", lambda e: self.print_receipt())
-        self.root.bind("<Delete>", lambda e: self.remove_all())
+        self.root.bind("<Delete>", lambda e: self.remove_selected())
+
+    def remove_selected(self):
+        selected_items = self.tree.selection()
+        if not selected_items:
+            return
+        for item_id in selected_items:
+            self.tree.delete(item_id)
+        self.qty_entry.focus()
+        self.qty_entry.select_range(0, tk.END)
 
     def open_settings(self):
         SettingsDialog(self.root, self.config, on_saved=self.apply_config)
