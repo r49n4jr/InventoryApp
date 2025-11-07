@@ -15,8 +15,8 @@ Transform the current simple POS system into a comprehensive inventory tracking 
 ## Phase 1: Foundation & Code Refactoring
 **Goal**: Clean up existing code, improve structure, and prepare for expansion
 
-### 1.1 Project Structure Reorganization
-- [ ] Create proper folder structure:
+### 1.1 Project Structure Reorganization --DONE--
+- [v] Create proper folder structure:
   ```
   /models          # Database models and business logic
   /ui              # UI components and windows
@@ -25,18 +25,18 @@ Transform the current simple POS system into a comprehensive inventory tracking 
   /reports         # Report generation logic
   /data            # Database and data files
   ```
-- [ ] Move existing code into appropriate folders
-- [ ] Update imports across all files
+- [v] Move existing code into appropriate folders
+- [v] Update imports across all files
 
-### 1.2 Configuration System
-- [ ] Create `config.json` for application settings
-- [ ] Add configurable settings:
+### 1.2 Configuration System --DONE--
+- [v] Create `config.json` for application settings
+- [v] Add configurable settings:
   - Printer port (currently hardcoded as COM6)
   - Database path
   - Application name/company info
   - Default units
-- [ ] Create `ConfigManager` class to load/save settings
-- [ ] Update code to use config instead of hardcoded values
+- [v] Create `ConfigManager` class to load/save settings
+- [v] Update code to use config instead of hardcoded values
 
 ### 1.3 Error Handling & Logging
 - [ ] Add proper try-except blocks throughout code
