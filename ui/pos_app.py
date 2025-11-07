@@ -94,9 +94,6 @@ class POSApp:
         selected_items = self.tree.selection()
         if not selected_items:
             return
-        # Confirm deletion of selected items
-        if not self.confirm("Remove", "Remove selected item(s)?"):
-            return
         for item_id in selected_items:
             self.tree.delete(item_id)
         self.qty_entry.focus()
