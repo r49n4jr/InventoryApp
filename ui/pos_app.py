@@ -1,11 +1,9 @@
 import tkinter as tk
 from tkinter import ttk, messagebox
-from inventory_manager import InventoryManager
-from receipt_printer import ReceiptPrinter
-from autocomplete_entry import AutocompleteEntry
-
-PRINTER_PORT = 'COM6'
-CSV_PATH = 'data/barang.csv'
+from models.inventory_manager import InventoryManager
+from utils.receipt_printer import ReceiptPrinter
+from ui.autocomplete_entry import AutocompleteEntry
+from config.constants import PRINTER_PORT, CSV_PATH
 
 class POSApp:
     def __init__(self, root):
