@@ -3,13 +3,18 @@ from tkinter import ttk, messagebox
 from models.inventory_manager import InventoryManager
 from utils.receipt_printer import ReceiptPrinter
 from ui.autocomplete_entry import AutocompleteEntry
-from config.constants import PRINTER_PORT, CSV_PATH
+from config.manager import ConfigManager
 
 class POSApp:
     def __init__(self, root):
         self.root = root
-        self.manager = InventoryManager(CSV_PATH)
-        self.printer = ReceiptPrinter(PRINTER_PORT)
+        self.config = ConfigManager()
+        self.manager = InventoryManager(self.config.csv_path)
+        self.printer = ReceiptPrinter(
+            self.config.printer_port,
+            baudrate=self.config.printer_baudrate,
+            timeout=self.config.printer_timeout,
+        )
         self.columns = ("Item", "Stock", "Qty", "Unit")
         self.qty_var = tk.StringVar(value="1")
         self.search_var = tk.StringVar()
@@ -17,7 +22,10 @@ class POSApp:
         self.setup_ui()
 
     def setup_ui(self):
-        self.root.title("Barang Gudang")
+        title = self.config.app_name or "Inventory App"
+        if self.config.company_name:
+            title = f"{title} - {self.config.company_name}"
+        self.root.title(title)
         self.root.geometry("600x580")
 
         self.setup_treeview()
@@ -79,7 +87,7 @@ class POSApp:
             return
         item_name = row["Item"]
         stock = row["Stock"]
-        unit = row.get("Unit", "pcs")
+        unit = row.get("Unit", self.config.default_unit)
         try:
             qty = int(self.qty_var.get())
             if qty < 0:
