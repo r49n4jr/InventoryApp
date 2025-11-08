@@ -1,7 +1,19 @@
 import tkinter as tk
 
 class AutocompleteEntry(tk.Entry):
+    """Entry widget with dropdown autocomplete behavior.
+
+    Uses a callback to fetch suggestions and invokes a selection callback
+    when the user confirms a choice.
+    """
     def __init__(self, suggestions_callback, on_select_callback, qty_entry, *args, **kwargs):
+        """Create the autocomplete entry.
+
+        Args:
+            suggestions_callback: Callable that returns a list of string suggestions for a keyword.
+            on_select_callback: Callable invoked with the selected string on Enter.
+            qty_entry: The quantity entry widget to refocus after selection.
+        """
         super().__init__(*args, **kwargs)
         self.suggestions_callback = suggestions_callback
         self.on_select_callback = on_select_callback
@@ -17,6 +29,7 @@ class AutocompleteEntry(tk.Entry):
         self.bind("<Return>", self.select_item)
 
     def update_suggestions(self, event=None):
+        """Update the dropdown based on the current typed text."""
         if event and event.keysym in ["Up", "Down", "Return"]:
             return
         typed = self.get().lower()
@@ -47,23 +60,27 @@ class AutocompleteEntry(tk.Entry):
         self.dropdown.deiconify()
 
     def update_selection(self):
+        """Visually select the current index in the listbox."""
         self.listbox.select_clear(0, tk.END)
         self.listbox.select_set(self.selected_index)
         self.listbox.activate(self.selected_index)
 
     def move_down(self, event):
+        """Move selection down in the suggestions list."""
         if self.listbox and self.selected_index < len(self.matches) - 1:
             self.selected_index += 1
             self.update_selection()
         return "break"
 
     def move_up(self, event):
+        """Move selection up in the suggestions list."""
         if self.listbox and self.selected_index > 0:
             self.selected_index -= 1
             self.update_selection()
         return "break"
 
     def select_item(self, event=None):
+        """Accept the current selection and notify the consumer."""
         if self.listbox and self.matches:
             selected = self.matches[self.selected_index]
             self.delete(0, tk.END)
@@ -75,5 +92,6 @@ class AutocompleteEntry(tk.Entry):
             return "break"
 
     def hide_dropdown(self):
+        """Hide the dropdown if it exists."""
         if self.dropdown:
             self.dropdown.withdraw()

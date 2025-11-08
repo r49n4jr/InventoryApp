@@ -1,5 +1,6 @@
 import tkinter as tk
-from tkinter import ttk, filedialog
+from tkinter import ttk, filedialog, messagebox
+from utils.constants import TITLE_INVALID_SETTINGS
 from config.manager import ConfigManager
 
 class SettingsDialog(tk.Toplevel):
@@ -77,17 +78,53 @@ class SettingsDialog(tk.Toplevel):
             self.db_path_var.set(path)
 
     def save(self):
+        try:
+            baud = int(self.baudrate_var.get())
+            timeout = int(self.timeout_var.get())
+            if baud <= 0:
+                raise ValueError("Baudrate must be a positive integer")
+            if timeout < 0:
+                raise ValueError("Timeout must be a non-negative integer")
+        except (TypeError, ValueError) as e:
+            messagebox.showerror(TITLE_INVALID_SETTINGS, f"Please enter valid numbers for baudrate and timeout.\n{e}")
+            return
+
+        port = self.printer_port_var.get().strip()
+        if not port:
+            messagebox.showerror(TITLE_INVALID_SETTINGS, "Printer port cannot be empty.")
+            return
+
+        csv_path = self.csv_path_var.get().strip() or "data/barang.csv"
+        db_path = self.db_path_var.get().strip() or "db/app.db"
+
+        # Validate file extensions and directory existence
+        try:
+            import os
+            csv_dir = os.path.dirname(csv_path) or "."
+            db_dir = os.path.dirname(db_path) or "."
+            if not csv_path.lower().endswith(".csv"):
+                raise ValueError("CSV path must end with .csv")
+            if not os.path.isdir(csv_dir):
+                raise ValueError(f"CSV directory does not exist: {csv_dir}")
+            if not db_path.lower().endswith(".db"):
+                raise ValueError("DB path must end with .db")
+            if not os.path.isdir(db_dir):
+                raise ValueError(f"DB directory does not exist: {db_dir}")
+        except ValueError as e:
+            messagebox.showerror(TITLE_INVALID_SETTINGS, str(e))
+            return
+
         data = {
             "app_name": self.app_name_var.get().strip() or "Inventory App",
             "company_name": self.company_var.get().strip(),
             "printer": {
-                "port": self.printer_port_var.get().strip() or "COM6",
-                "baudrate": int(self.baudrate_var.get()),
-                "timeout": int(self.timeout_var.get()),
+                "port": port or "COM6",
+                "baudrate": baud,
+                "timeout": timeout,
             },
             "data": {
-                "csv_path": self.csv_path_var.get().strip() or "data/barang.csv",
-                "db_path": self.db_path_var.get().strip() or "db/app.db",
+                "csv_path": csv_path,
+                "db_path": db_path,
                 "default_unit": self.unit_var.get().strip() or "pcs",
             },
         }
