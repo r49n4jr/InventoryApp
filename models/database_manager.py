@@ -123,6 +123,26 @@ class DatabaseManager:
             for stmt in DDL_STATEMENTS:
                 conn.executescript(stmt)
 
+    @contextmanager
+    def transaction(self):
+        """Context manager for an explicit transaction.
+
+        Usage:
+            with db.transaction() as conn:
+                conn.execute(...)
+        """
+        conn = sqlite3.connect(str(self.db_path))
+        try:
+            conn.execute("PRAGMA foreign_keys = ON;")
+            conn.execute("BEGIN;")
+            yield conn
+            conn.commit()
+        except Exception:
+            conn.rollback()
+            raise
+        finally:
+            conn.close()
+
 
 def initialize_database(db_path: Optional[str] = None) -> Path:
     manager = DatabaseManager(db_path)
