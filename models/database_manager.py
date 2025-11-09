@@ -1,4 +1,5 @@
 import sqlite3
+import logging
 from contextlib import contextmanager
 from pathlib import Path
 from typing import Any, Iterable, Optional
@@ -87,6 +88,18 @@ class DatabaseManager:
         self.db_path = Path(db_path)
         # Ensure directory exists
         self.db_path.parent.mkdir(parents=True, exist_ok=True)
+        # Setup logging to file
+        logs_dir = self.db_path.parent.parent / 'logs'
+        logs_dir.mkdir(parents=True, exist_ok=True)
+        self._logger = logging.getLogger(__name__)
+        if not self._logger.handlers:
+            fh = logging.FileHandler(str(logs_dir / 'app.log'), encoding='utf-8')
+            fmt = logging.Formatter('%(asctime)s %(levelname)s %(name)s: %(message)s')
+            fh.setFormatter(fmt)
+            self._logger.addHandler(fh)
+            self._logger.setLevel(logging.INFO)
+        # Schema versioning
+        self.SCHEMA_VERSION = 1
 
     @contextmanager
     def connect(self):
@@ -119,9 +132,30 @@ class DatabaseManager:
 
     def initialize(self) -> None:
         """Create tables and indexes if they don't exist."""
-        with self.connect() as conn:
-            for stmt in DDL_STATEMENTS:
-                conn.executescript(stmt)
+        self._logger.info(f"Initializing database at {self.db_path}")
+        try:
+            with self.connect() as conn:
+                for stmt in DDL_STATEMENTS:
+                    conn.executescript(stmt)
+                # Schema version table
+                conn.execute(
+                    """
+                    CREATE TABLE IF NOT EXISTS schema_migrations (
+                        version INTEGER NOT NULL,
+                        applied_at TEXT NOT NULL DEFAULT (datetime('now'))
+                    );
+                    """
+                )
+                # Set version if not present
+                cur = conn.execute("SELECT MAX(version) FROM schema_migrations")
+                row = cur.fetchone()
+                current = int(row[0]) if row and row[0] is not None else None
+                if current is None or current < self.SCHEMA_VERSION:
+                    conn.execute("INSERT INTO schema_migrations(version) VALUES (?)", (self.SCHEMA_VERSION,))
+            self._logger.info("Database initialization completed successfully")
+        except Exception as e:
+            self._logger.exception(f"Database initialization failed: {e}")
+            raise
 
     @contextmanager
     def transaction(self):
