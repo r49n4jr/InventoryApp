@@ -76,9 +76,9 @@ Transform the current simple POS system into a comprehensive inventory tracking 
   - [v] Enable PRAGMA foreign_keys=ON
   - [v] `transaction_items.transaction_id` → `transactions.id` ON DELETE CASCADE
 
-- [ ] Step 4: Validate DDL
-  - [ ] Create schema in temporary DB file
-  - [ ] Verify constraints, indexes, and FK behavior
+- [v] Step 4: Validate DDL
+  - [v] Create schema in temporary DB file
+  - [v] Verify constraints, indexes, and FK behavior
 
 - [ ] Step 5: Document CSV mapping
   - [ ] CSV Item → items.name
