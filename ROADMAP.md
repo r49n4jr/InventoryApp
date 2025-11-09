@@ -58,12 +58,36 @@ Transform the current simple POS system into a comprehensive inventory tracking 
 **Goal**: Replace CSV with SQLite database for better data management
 
 ### 2.1 Database Schema Design
-- [ ] Design SQLite schema with tables:
-  - `items` (id, code, name, group, unit, barcode, current_stock, active, created_at, updated_at)
-  - `transactions` (id, transaction_number, person_name, transaction_type, notes, created_at)
-  - `transaction_items` (id, transaction_id, item_id, quantity, stock_before, stock_after)
-  - `stock_adjustments` (id, item_id, old_stock, new_stock, adjustment, reason, created_at)
-  - `product_groups` (id, name, parent_id, created_at)
+- [ ] Step 1: Finalize field rules
+  - [ ] `items.code` UNIQUE (yes)
+  - [ ] `items.barcode` UNIQUE (no)
+  - [ ] `transactions.transaction_type` ∈ {OUT, IN, ADJUST}
+  - [ ] Timestamps default via `datetime('now')`
+
+- [ ] Step 2: Define tables (DDL draft)
+  - [ ] `product_groups` (id, name, parent_id, created_at)
+  - [ ] `items` (id, code UNIQUE, name, group_id, unit, barcode, current_stock, active, created_at, updated_at)
+  - [ ] `transactions` (id, transaction_number UNIQUE, person_name, transaction_type, notes, created_at)
+  - [ ] `transaction_items` (id, transaction_id, item_id, quantity, stock_before, stock_after)
+  - [ ] `stock_adjustments` (id, item_id, old_stock, new_stock, adjustment, reason, created_at)
+
+- [ ] Step 3: Indexes & foreign keys
+  - [ ] Indexes: items(name), items(code), items(barcode), transaction_items(transaction_id), product_groups(parent_id)
+  - [ ] Enable PRAGMA foreign_keys=ON
+  - [ ] `transaction_items.transaction_id` → `transactions.id` ON DELETE CASCADE
+
+- [ ] Step 4: Validate DDL
+  - [ ] Create schema in temporary DB file
+  - [ ] Verify constraints, indexes, and FK behavior
+
+- [ ] Step 5: Document CSV mapping
+  - [ ] CSV Item → items.name
+  - [ ] CSV Stock → items.current_stock (coerce invalid to 0)
+  - [ ] CSV Unit → items.unit
+  - [ ] Duplicates policy: decide in migration step (keep first / sum / skip)
+
+- [ ] Step 6: Record decisions
+  - [ ] Save final DDL and decisions in repo notes/README
 
 ### 2.2 Database Layer Implementation
 - [ ] Create `DatabaseManager` class for connection handling
