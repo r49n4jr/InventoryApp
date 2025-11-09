@@ -24,7 +24,7 @@ DDL_STATEMENTS = [
         name TEXT NOT NULL,
         group_id INTEGER REFERENCES product_groups(id),
         unit TEXT NOT NULL DEFAULT 'pcs',
-        barcode TEXT,
+        barcode TEXT UNIQUE,
         current_stock INTEGER NOT NULL DEFAULT 0,
         active INTEGER NOT NULL DEFAULT 1,
         created_at TEXT NOT NULL DEFAULT (datetime('now')),

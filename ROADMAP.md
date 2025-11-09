@@ -57,24 +57,24 @@ Transform the current simple POS system into a comprehensive inventory tracking 
 ## Phase 2: Database Migration
 **Goal**: Replace CSV with SQLite database for better data management
 
-### 2.1 Database Schema Design
-- [ ] Step 1: Finalize field rules
-  - [ ] `items.code` UNIQUE (yes)
-  - [ ] `items.barcode` UNIQUE (no)
-  - [ ] `transactions.transaction_type` ∈ {OUT, IN, ADJUST}
-  - [ ] Timestamps default via `datetime('now')`
+### 2.1 Database Schema Design --IN PROGRESS--
+- [v] Step 1: Finalize field rules
+  - [v] `items.code` UNIQUE (yes)
+  - [v] `items.barcode` UNIQUE (yes)
+  - [v] `transactions.transaction_type` ∈ {OUT, IN, ADJUST}
+  - [v] Timestamps default via `datetime('now')`
 
-- [ ] Step 2: Define tables (DDL draft)
-  - [ ] `product_groups` (id, name, parent_id, created_at)
-  - [ ] `items` (id, code UNIQUE, name, group_id, unit, barcode, current_stock, active, created_at, updated_at)
-  - [ ] `transactions` (id, transaction_number UNIQUE, person_name, transaction_type, notes, created_at)
-  - [ ] `transaction_items` (id, transaction_id, item_id, quantity, stock_before, stock_after)
-  - [ ] `stock_adjustments` (id, item_id, old_stock, new_stock, adjustment, reason, created_at)
+- [v] Step 2: Define tables (DDL draft)
+  - [v] `product_groups` (id, name, parent_id, created_at)
+  - [v] `items` (id, code UNIQUE, name, group_id, unit, barcode UNIQUE, current_stock, active, created_at, updated_at)
+  - [v] `transactions` (id, transaction_number UNIQUE, person_name, transaction_type, notes, created_at)
+  - [v] `transaction_items` (id, transaction_id, item_id, quantity, stock_before, stock_after)
+  - [v] `stock_adjustments` (id, item_id, old_stock, new_stock, adjustment, reason, created_at)
 
-- [ ] Step 3: Indexes & foreign keys
-  - [ ] Indexes: items(name), items(code), items(barcode), transaction_items(transaction_id), product_groups(parent_id)
-  - [ ] Enable PRAGMA foreign_keys=ON
-  - [ ] `transaction_items.transaction_id` → `transactions.id` ON DELETE CASCADE
+- [v] Step 3: Indexes & foreign keys
+  - [v] Indexes: items(name), items(code), items(barcode), transaction_items(transaction_id), product_groups(parent_id)
+  - [v] Enable PRAGMA foreign_keys=ON
+  - [v] `transaction_items.transaction_id` → `transactions.id` ON DELETE CASCADE
 
 - [ ] Step 4: Validate DDL
   - [ ] Create schema in temporary DB file
