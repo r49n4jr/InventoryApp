@@ -90,24 +90,55 @@ Transform the current simple POS system into a comprehensive inventory tracking 
   - [ ] Save final DDL and decisions in repo notes/README
 
 ### 2.2 Database Layer Implementation
-- [ ] Create `DatabaseManager` class for connection handling
-- [ ] Implement database initialization script
-- [ ] Create model classes (Item, Transaction, TransactionItem, etc.)
-- [ ] Add CRUD operations for each model
-- [ ] Implement transaction support (rollback on errors)
+- [ ] Step 1: `DatabaseManager`
+  - [ ] Open/close connection (context manager)
+  - [ ] Ensure DB file directory exists
+  - [ ] Enable `PRAGMA foreign_keys=ON` per connection
+  - [ ] Provide helpers: `execute`, `executemany`, `query_all`, `query_one`
+- [ ] Step 2: Initialization & migrations
+  - [ ] Idempotent DDL runner (create tables/indexes if not exist)
+  - [ ] Store current schema version (reserved for future upgrades)
+  - [ ] Log warnings/errors to file on failure
+- [ ] Step 3: Repositories (initial focus: Items)
+  - [ ] `ItemsRepository`: `get_by_id`, `get_by_name`, `search(name LIKE)`, `insert`, `update`, `set_active`
+  - [ ] Atomic stock update (`stock_before`/`stock_after` computed around print)
+- [ ] Step 4: Transactions scaffolding
+  - [ ] `TransactionManager` helper for BEGIN/COMMIT/ROLLBACK
+  - [ ] Validate FK integrity on commit
+- [ ] Step 5: Smoke tests/manual checks
+  - [ ] Create temp DB, run migrations
+  - [ ] Insert + query items
+  - [ ] Verify cascade on `transaction_items`
 
 ### 2.3 CSV to SQLite Migration
-- [ ] Write one-time migration script
-- [ ] Read existing `barang.csv`
-- [ ] Import items into SQLite database
-- [ ] Verify data integrity after migration
-- [ ] Keep CSV as backup
+- [ ] Step 1: Backup
+  - [ ] Copy `data/barang.csv` → `data/barang.backup.csv`
+- [ ] Step 2: Read CSV
+  - [ ] Use pandas; coerce invalid stock to 0
+- [ ] Step 3: Transform
+  - [ ] Map: Item→items.name, Stock→items.current_stock, Unit→items.unit
+  - [ ] Duplicates policy: keep first occurrence; log duplicates
+- [ ] Step 4: Load
+  - [ ] Batch insert rows into `items`
+- [ ] Step 5: Verify
+  - [ ] Count inserted vs. source (minus duplicates/invalid)
+  - [ ] Spot-check several rows by name
+- [ ] Step 6: Report
+  - [ ] Print migration summary (inserted, skipped, duplicates)
 
 ### 2.4 Update Existing Code
-- [ ] Refactor `InventoryManager` to use SQLite instead of pandas
-- [ ] Update all database queries
-- [ ] Test all existing functionality (search, add to cart, print)
-- [ ] Ensure UI works exactly as before
+- [ ] Step 1: Config flag
+  - [ ] Add `data.source`: `"csv" | "sqlite"` (default: `"csv"`)
+- [ ] Step 2: Repository adapter
+  - [ ] Define `InventoryRepository` interface: `get_suggestions`, `get_item`, `update_stock`, `save`
+  - [ ] CSV-backed adapter: proxy current `InventoryManager`
+  - [ ] SQLite-backed adapter: wrap `ItemsRepository`
+- [ ] Step 3: UI wiring (POSApp)
+  - [ ] Choose backend by `data.source`
+  - [ ] Keep identical UX and shortcuts
+- [ ] Step 4: Testing
+  - [ ] Verify search/add/edit/print/stock for both backends
+  - [ ] Validate persistence in SQLite
 
 **Deliverable**: Fully functional system using SQLite database, CSV deprecated
 
