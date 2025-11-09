@@ -9,6 +9,7 @@
   "data": {
     "csv_path": "data/barang.csv",
     "db_path": "db/app.db",
+    "source": "sqlite",
     "default_unit": "pcs"
   }
 }

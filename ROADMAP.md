@@ -80,55 +80,55 @@ Transform the current simple POS system into a comprehensive inventory tracking 
   - [v] Create schema in temporary DB file
   - [v] Verify constraints, indexes, and FK behavior
 
-- [ ] Step 5: Document CSV mapping
-  - [ ] CSV Item → items.name
-  - [ ] CSV Stock → items.current_stock (coerce invalid to 0)
-  - [ ] CSV Unit → items.unit
-  - [ ] Duplicates policy: decide in migration step (keep first / sum / skip)
+- [v] Step 5: Document CSV mapping
+  - [v] CSV Item → items.name
+  - [v] CSV Stock → items.current_stock (coerce invalid to 0)
+  - [v] CSV Unit → items.unit
+  - [v] Duplicates policy: keep first, log others
 
-- [ ] Step 6: Record decisions
-  - [ ] Save final DDL and decisions in repo notes/README
+- [v] Step 6: Record decisions
+  - [v] Save final DDL and decisions in repo notes/README
 
 ### 2.2 Database Layer Implementation
-- [ ] Step 1: `DatabaseManager`
-  - [ ] Open/close connection (context manager)
-  - [ ] Ensure DB file directory exists
-  - [ ] Enable `PRAGMA foreign_keys=ON` per connection
-  - [ ] Provide helpers: `execute`, `executemany`, `query_all`, `query_one`
-- [ ] Step 2: Initialization & migrations
-  - [ ] Idempotent DDL runner (create tables/indexes if not exist)
-  - [ ] Store current schema version (reserved for future upgrades)
-  - [ ] Log warnings/errors to file on failure
-- [ ] Step 3: Repositories (initial focus: Items)
-  - [ ] `ItemsRepository`: `get_by_id`, `get_by_name`, `search(name LIKE)`, `insert`, `update`, `set_active`
-  - [ ] Atomic stock update (`stock_before`/`stock_after` computed around print)
-- [ ] Step 4: Transactions scaffolding
-  - [ ] `TransactionManager` helper for BEGIN/COMMIT/ROLLBACK
-  - [ ] Validate FK integrity on commit
-- [ ] Step 5: Smoke tests/manual checks
-  - [ ] Create temp DB, run migrations
-  - [ ] Insert + query items
-  - [ ] Verify cascade on `transaction_items`
+- [v] Step 1: `DatabaseManager`
+  - [v] Open/close connection (context manager)
+  - [v] Ensure DB file directory exists
+  - [v] Enable `PRAGMA foreign_keys=ON` per connection
+  - [v] Provide helpers: `execute`, `executemany`, `query_all`, `query_one`
+- [v] Step 2: Initialization & migrations
+  - [v] Idempotent DDL runner (create tables/indexes if not exist)
+  - [v] Store current schema version (reserved for future upgrades)
+  - [v] Log warnings/errors to file on failure
+- [v] Step 3: Repositories (initial focus: Items)
+  - [v] `ItemsRepository`: `get_by_id`, `get_by_name`, `search(name/code/barcode LIKE)`, `insert`, `update`, `set_active`
+  - [v] Atomic stock update (`stock_before`/`stock_after` computed around print)
+- [v] Step 4: Transactions scaffolding
+  - [v] `TransactionManager` helper for BEGIN/COMMIT/ROLLBACK
+  - [v] Validate FK integrity on commit
+- [v] Step 5: Smoke tests/manual checks
+  - [v] Create temp DB, run migrations
+  - [v] Insert + query items
+  - [v] Verify cascade on `transaction_items`
 
 ### 2.3 CSV to SQLite Migration
-- [ ] Step 1: Backup
-  - [ ] Copy `data/barang.csv` → `data/barang.backup.csv`
-- [ ] Step 2: Read CSV
-  - [ ] Use pandas; coerce invalid stock to 0
-- [ ] Step 3: Transform
-  - [ ] Map: Item→items.name, Stock→items.current_stock, Unit→items.unit
-  - [ ] Duplicates policy: keep first occurrence; log duplicates
-- [ ] Step 4: Load
-  - [ ] Batch insert rows into `items`
-- [ ] Step 5: Verify
-  - [ ] Count inserted vs. source (minus duplicates/invalid)
-  - [ ] Spot-check several rows by name
-- [ ] Step 6: Report
-  - [ ] Print migration summary (inserted, skipped, duplicates)
+ - [v] Step 1: Backup
+  - [v] Copy `data/barang.csv` → `data/barang.backup.csv`
+- [v] Step 2: Read CSV
+  - [v] Use pandas; coerce invalid stock to 0
+- [v] Step 3: Transform
+  - [v] Map: Item→items.name, Stock→items.current_stock, Unit→items.unit
+  - [v] Duplicates policy: keep first occurrence; log duplicates
+- [v] Step 4: Load
+  - [v] Batch insert rows into `items`
+- [v] Step 5: Verify
+  - [v] Count inserted vs. source (minus duplicates/invalid)
+  - [v] Spot-check several rows by name
+- [v] Step 6: Report
+  - [v] Print migration summary (inserted, skipped, duplicates)
 
 ### 2.4 Update Existing Code
-- [ ] Step 1: Config flag
-  - [ ] Add `data.source`: `"csv" | "sqlite"` (default: `"csv"`)
+ - [v] Step 1: Config flag
+  - [v] Add `data.source`: `"csv" | "sqlite"` (default: `"csv"`)
 - [ ] Step 2: Repository adapter
   - [ ] Define `InventoryRepository` interface: `get_suggestions`, `get_item`, `update_stock`, `save`
   - [ ] CSV-backed adapter: proxy current `InventoryManager`

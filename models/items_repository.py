@@ -117,3 +117,25 @@ class ItemsRepository:
                 "UPDATE items SET current_stock=?, updated_at=datetime('now') WHERE id=?",
                 (new_stock, item_id),
             )
+
+    def update_stock_atomic(self, item_id: int, delta: int) -> dict:
+        """Atomically update stock by delta, returning before/after values.
+
+        Returns:
+            {"item_id": id, "stock_before": int, "stock_after": int}
+        """
+        with self.db.transaction() as conn:
+            cur = conn.execute(
+                "SELECT current_stock FROM items WHERE id=?",
+                (item_id,),
+            )
+            row = cur.fetchone()
+            if row is None:
+                raise ValueError(f"Item id {item_id} not found")
+            before = int(row[0] or 0)
+            after = before + int(delta)
+            conn.execute(
+                "UPDATE items SET current_stock=?, updated_at=datetime('now') WHERE id=?",
+                (after, item_id),
+            )
+            return {"item_id": item_id, "stock_before": before, "stock_after": after}
