@@ -1,0 +1,15 @@
+{
+  "app_name": "Barang Gudang",
+  "company_name": "",
+  "printer": {
+    "port": "COM6",
+    "baudrate": 9600,
+    "timeout": 1
+  },
+  "data": {
+    "csv_path": "data/barang.csv",
+    "db_path": "db/app.db",
+    "source": "sqlite",
+    "default_unit": "pcs"
+  }
+}

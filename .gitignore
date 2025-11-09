@@ -1,4 +1,4 @@
-﻿__pycache__/
+__pycache__/
 *.pyc
 *.pyo
 *.pyd
@@ -13,3 +13,7 @@ build/
 .idea/
 .vscode/
 .DS_Store
+logs/
+db/
+data/*.backup.csv
+config/config.json
